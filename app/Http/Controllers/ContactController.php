@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
-use Inertia\Response;
+use App\Http\Requests\ContactRequest;
 use App\Models\Contact;
-use Illuminate\Http\Request;
 use App\Services\ContactService;
 use Illuminate\Http\JsonResponse;
-use App\Http\Requests\ContactRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class ContactController extends Controller
 {

@@ -17,11 +17,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
 
-    // Dashboard
-    Route::get('/dashboard', function () {
-        return inertia('Dashboard');
-    })->name('dashboard');
-
     // Contacts
     Route::resource('contacts', ContactController::class);
     Route::post('/contacts/bulk-delete', [ContactController::class, 'bulkDelete'])->name('contacts.bulk-delete');
