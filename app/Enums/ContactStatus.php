@@ -1,6 +1,6 @@
 <?php
 
-namespace App;
+namespace App\Enums;
 
 enum ContactStatus: int
 {
@@ -11,13 +11,11 @@ enum ContactStatus: int
 
     public function label(): string
     {
-        return match($this){
-            self::ACTIVE        => "Active",
-            self::UNSUBSCRIBED  => "Unsubscribed",
-            self::BOUNCED       => "Bounced",
-            self::UNKNOWN       => "Unknown",
+        return match ($this) {
+            self::ACTIVE        => 'Active',
+            self::UNSUBSCRIBED  => 'Unsubscribed',
+            self::BOUNCED       => 'Bounced',
+            self::UNKNOWN       => 'Unknown',
         };
     }
-
-
 }

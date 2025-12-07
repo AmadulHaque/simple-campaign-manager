@@ -2,7 +2,7 @@
 
 namespace App\Data;
 
-use App\ContactStatus;
+use App\Enums\ContactStatus;
 
 class ContactData
 {

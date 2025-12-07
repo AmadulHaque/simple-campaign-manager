@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\CampaignRecipientStatus;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -17,12 +17,15 @@ return new class extends Migration
             $table->foreignId('campaign_id')->constrained()->onDelete('cascade');
             $table->foreignId('contact_id')->constrained()->onDelete('cascade');
             $table->integer('status')->default(CampaignRecipientStatus::PENDING->value)->comment('All status are available enum class..');
-            $table->timestamp('sent_at')->nullable();
             $table->text('error_message')->nullable();
+
+            $table->timestamp('sent_at')->nullable();
+            $table->timestamp('opened_at')->nullable();
+            $table->timestamp('clicked_at')->nullable();
             $table->timestamps();
-            
-            $table->index(['campaign_id', 'status']);
+
             $table->unique(['campaign_id', 'contact_id']);
+            $table->index('status');
         });
     }
 

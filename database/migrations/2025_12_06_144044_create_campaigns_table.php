@@ -1,9 +1,9 @@
 <?php
 
 use App\Enums\CampaignStatus;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -20,17 +20,16 @@ return new class extends Migration
             $table->text('body');
 
             $table->integer('status')->default(CampaignStatus::DRAFT->value);
+            $table->integer('sent_count')->default(0);
+            $table->integer('failed_count')->default(0);
+            $table->integer('total_recipients')->default(0);
 
             $table->timestamp('scheduled_at')->nullable();
             $table->timestamp('sent_at')->nullable();
-
-            $table->integer('total_recipients')->default(0);
-            $table->integer('sent_count')->default(0);
-            $table->integer('failed_count')->default(0);
-
             $table->timestamps();
 
             $table->index('status');
+            $table->index('scheduled_at');
         });
     }
 

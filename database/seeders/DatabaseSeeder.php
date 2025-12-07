@@ -14,8 +14,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory(10000)->create();
-        Contact::factory()->count(20000)->create();
+        Contact::factory()->count(100)->create();
 
         User::firstOrCreate(
             ['email' => 'admin@gmail.com'],

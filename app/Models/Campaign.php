@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use App\Enums\CampaignStatus;
 use App\Enums\CampaignRecipientStatus;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Enums\CampaignStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Campaign extends Model
 {
@@ -33,7 +33,6 @@ class Campaign extends Model
         'updated_at'    => 'datetime',
     ];
 
-
     public function contacts(): BelongsToMany
     {
         return $this->belongsToMany(Contact::class, 'campaign_recipients')
@@ -56,9 +55,29 @@ class Campaign extends Model
         if ($this->total_recipients === 0) {
             return 0;
         }
+
         return round(($this->sent_count / $this->total_recipients) * 100, 2);
     }
 
+    public function getStatsAttribute()
+    {
+        return [
+            'total'   => $this->contacts()->count(),
+            'pending' => $this->contacts()->wherePivot('status', CampaignRecipientStatus::PENDING)->count(),
+            'sent'    => $this->contacts()->wherePivot('status', CampaignRecipientStatus::SENT)->count(),
+            'failed'  => $this->contacts()->wherePivot('status', CampaignRecipientStatus::FAILED)->count(),
+            'opened'  => $this->contacts()->wherePivot('status', CampaignRecipientStatus::OPENED)->count(),
+            'clicked' => $this->contacts()->wherePivot('status', CampaignRecipientStatus::CLICKED)->count(),
+        ];
+    }
 
+    public function scopeDraft($query)
+    {
+        return $query->where('status', CampaignStatus::DRAFT);
+    }
 
+    public function scopeSent($query)
+    {
+        return $query->where('status', CampaignStatus::SENT);
+    }
 }

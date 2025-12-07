@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use App\ContactStatus;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\ContactStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Contact extends Model
@@ -15,14 +15,16 @@ class Contact extends Model
         'name',
         'email',
         'status',
+        'subscribed_at',
     ];
 
     protected $casts = [
-        'status'     => ContactStatus::class,
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'status'        => ContactStatus::class,
+        'subscribed_at' => 'datetime',
+        'created_at'    => 'datetime',
+        'updated_at'    => 'datetime',
     ];
-    
+
     public function campaigns(): BelongsToMany
     {
         return $this->belongsToMany(Campaign::class, 'campaign_recipients')
@@ -35,5 +37,8 @@ class Contact extends Model
         return $query->where('status', ContactStatus::ACTIVE);
     }
 
-
+    public function scopeSubscribed($query): mixed
+    {
+        return $query->whereNotNull('subscribed_at');
+    }
 }

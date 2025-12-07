@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\ContactStatus;
+use App\Enums\ContactStatus;
 use App\Models\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
