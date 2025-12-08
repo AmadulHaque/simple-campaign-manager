@@ -4,12 +4,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Data\CampaignData;
-use App\Http\Requests\CampaignRequest;
-use App\Models\Campaign;
-use App\Services\CampaignService;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Campaign;
+use App\Data\CampaignData;
+use Illuminate\Http\Request;
+use App\Services\CampaignService;
+use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\CampaignRequest;
 
 class CampaignController extends Controller
 {
@@ -60,7 +61,7 @@ class CampaignController extends Controller
         ]);
     }
 
-    public function send(Campaign $campaign)
+    public function send(Campaign $campaign): RedirectResponse
     {
         $this->service->sendCampaign($campaign);
 
@@ -69,7 +70,7 @@ class CampaignController extends Controller
             ->with('success', 'Campaign is being sent.');
     }
 
-    public function updateContacts(Request $request, Campaign $campaign)
+    public function updateContacts(Request $request, Campaign $campaign): RedirectResponse
     {
         $request->validate([
             'contacts' => 'required|array',

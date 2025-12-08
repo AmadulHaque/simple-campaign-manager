@@ -73,7 +73,7 @@ export default function CampaignsIndex({ campaigns }: CampaignsIndexProps) {
                       )}
                     </div>
                     <div className="flex gap-2">
-                      <Link href={'/campaigns/' + campaign.id + '/show'}>
+                      <Link href={'/campaigns/' + campaign.id}>
                         <Button variant="outline" size="sm">
                           View Details
                         </Button>

@@ -8,12 +8,25 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Campaign, Contact, CampaignStats } from '@/types';
+import { getCampaignStatusColor, getCampaignStatusLabel } from '@/types/enums';
+import { Label } from '@/components/ui/label';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 
 interface CampaignsShowProps {
   campaign: Campaign;
   availableContacts: Contact[];
   stats: CampaignStats;
 }
+
+
+const breadcrumbs: BreadcrumbItem[] = [
+  {
+    title: 'Campaigns',
+    href: '/campaigns',
+  },
+];
+
 
 export default function CampaignsShow({ campaign, availableContacts, stats }: CampaignsShowProps) {
   const { data, setData, post, processing } = useForm({
@@ -53,25 +66,6 @@ export default function CampaignsShow({ campaign, availableContacts, stats }: Ca
     }
   };
 
-  const getCampaignStatusColor = (status: number) => {
-    switch (status) {
-      case 1: return 'bg-gray-100 text-gray-800'; // draft
-      case 2: return 'bg-yellow-100 text-yellow-800'; // sending
-      case 3: return 'bg-green-100 text-green-800'; // sent
-      case 4: return 'bg-red-100 text-red-800'; // cancelled
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getCampaignStatusLabel = (status: number) => {
-    switch (status) {
-      case 1: return 'Draft';
-      case 2: return 'Sending';
-      case 3: return 'Sent';
-      case 4: return 'Cancelled';
-      default: return 'Unknown';
-    }
-  };
 
   const handleContactToggle = (contactId: number, checked: boolean) => {
     if (checked) {
@@ -92,21 +86,21 @@ export default function CampaignsShow({ campaign, availableContacts, stats }: Ca
   const handleAddContacts = () => {
     setData('contacts', selectedContacts);
     setData('action', 'attach');
-    post(route('campaigns.updateContacts', campaign.id));
+    post('/campaigns/' + campaign.id + '/updateContacts');
   };
 
   const handleRemoveContacts = () => {
     const currentRecipientIds = campaign.recipients?.map(r => r.contact_id) || [];
     const contactsToRemove = selectedContacts.filter(id => currentRecipientIds.includes(id));
-    
+
     setData('contacts', contactsToRemove);
     setData('action', 'detach');
-    post(route('campaigns.updateContacts', campaign.id));
+    post('/campaigns/' + campaign.id + '/updateContacts');
   };
 
   const handleSendCampaign = () => {
     if (confirm('Are you sure you want to send this campaign?')) {
-      post(route('campaigns.send', campaign.id));
+      post('/campaigns/' + campaign.id + '/send');
     }
   };
 
@@ -116,283 +110,288 @@ export default function CampaignsShow({ campaign, availableContacts, stats }: Ca
 
   return (
     <>
-      <Head title={`Campaign: ${campaign.name}`} />
-      
-      <div className="container mx-auto py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">{campaign.name}</h1>
-            <p className="text-gray-600">Campaign details and performance</p>
-          </div>
-          <div className="flex space-x-2">
-            <Link href={route('campaigns.index')}>
-              <Button variant="outline">Back to Campaigns</Button>
-            </Link>
-            {campaign.status === 1 && (
-              <Button onClick={handleSendCampaign} disabled={processing}>
-                Send Campaign
-              </Button>
-            )}
-          </div>
-        </div>
+      <AppLayout breadcrumbs={breadcrumbs}>
+        <Head title={`Campaign: ${campaign.name}`} />
+        <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
 
-        {/* Campaign Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Badge className={getCampaignStatusColor(campaign.status)}>
-                {getCampaignStatusLabel(campaign.status)}
-              </Badge>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Recipients</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.success_rate}%</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Sent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.sent}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Stats Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Pending</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold">{stats.pending}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Sent</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-green-600">{stats.sent}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Failed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-red-600">{stats.failed}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Opened</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-blue-600">{stats.opened}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Clicked</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xl font-bold text-purple-600">{stats.clicked}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Campaign Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Subject</label>
-                  <p className="mt-1">{campaign.subject}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Body</label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    <pre className="whitespace-pre-wrap text-sm">{campaign.body}</pre>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Created</label>
-                  <p className="mt-1">{new Date(campaign.created_at).toLocaleDateString()}</p>
-                </div>
+          <div className="container mx-auto py-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-3xl font-bold">{campaign.name}</h1>
+                <p className="text-gray-600">Campaign details and performance</p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex space-x-2">
+                <Link href={'/campaigns'}>
+                  <Button variant="outline">Back to Campaigns</Button>
+                </Link>
+                {campaign.status === 'draft' && (
+                  <Button onClick={handleSendCampaign} disabled={processing}>
+                    Send Campaign
+                  </Button>
+                )}
+              </div>
+            </div>
 
-          {/* Contact Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Manage Recipients</CardTitle>
-              <CardDescription>
-                Add or remove contacts from this campaign
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <Input
-                    type="text"
-                    placeholder="Search contacts..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-64"
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="select-all"
-                      checked={allSelected}
-                      onCheckedChange={handleSelectAll}
-                    />
-                    <Label htmlFor="select-all">Select All</Label>
-                    {selectedCount > 0 && (
-                      <Badge variant="secondary">
-                        {selectedCount} selected
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+            {/* Campaign Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Badge className={getCampaignStatusColor(campaign.status)}>
+                    {getCampaignStatusLabel(campaign.status)}
+                  </Badge>
+                </CardContent>
+              </Card>
 
-                <div className="border rounded-lg max-h-64 overflow-y-auto">
-                  {filteredContacts.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                      No contacts found
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Total Recipients</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.total}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.success_rate}%</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Sent</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.sent}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Stats Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Pending</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold">{stats.pending}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Sent</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold text-green-600">{stats.sent}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold text-red-600">{stats.failed}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Opened</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold text-blue-600">{stats.opened}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium">Clicked</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-xl font-bold text-purple-600">{stats.clicked}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Campaign Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Campaign Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Subject</label>
+                      <p className="mt-1">{campaign.subject}</p>
                     </div>
-                  ) : (
-                    filteredContacts.map((contact) => (
-                      <div
-                        key={contact.id}
-                        className="flex items-center space-x-3 p-3 hover:bg-gray-50 border-b last:border-b-0"
-                      >
-                        <Checkbox
-                          id={`contact-${contact.id}`}
-                          checked={selectedContacts.includes(contact.id)}
-                          onCheckedChange={(checked) =>
-                            handleContactToggle(contact.id, checked as boolean)
-                          }
-                        />
-                        <div className="flex-1">
-                          <Label
-                            htmlFor={`contact-${contact.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {contact.name}
-                          </Label>
-                          <p className="text-xs text-gray-500">{contact.email}</p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {contact.status === 1 ? 'Active' : 'Inactive'}
-                        </Badge>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Body</label>
+                      <div className="mt-1 p-3  text-black-50 rounded-md border border-gray-300">
+                        <pre className="whitespace-pre-wrap  text-sm">{campaign.body}</pre>
                       </div>
-                    ))
-                  )}
-                </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">Created</label>
+                      <p className="mt-1">{new Date(campaign.created_at).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleRemoveContacts}
-                    disabled={selectedCount === 0 || processing}
-                  >
-                    Remove Selected
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleAddContacts}
-                    disabled={selectedCount === 0 || processing}
-                  >
-                    Add Selected
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Contact Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manage Recipients</CardTitle>
+                  <CardDescription>
+                    Add or remove contacts from this campaign
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <Input
+                        type="text"
+                        placeholder="Search contacts..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-64"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="select-all"
+                          checked={allSelected}
+                          onCheckedChange={handleSelectAll}
+                        />
+                        <Label htmlFor="select-all">Select All</Label>
+                        {selectedCount > 0 && (
+                          <Badge variant="secondary">
+                            {selectedCount} selected
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border rounded-lg max-h-64 overflow-y-auto">
+                      {filteredContacts.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500">
+                          No contacts found
+                        </div>
+                      ) : (
+                        filteredContacts.map((contact) => (
+                          <div
+                            key={contact.id}
+                            className="flex items-center space-x-3 p-3 hover:bg-gray-50 border-b last:border-b-0"
+                          >
+                            <Checkbox
+                              id={`contact-${contact.id}`}
+                              checked={selectedContacts.includes(contact.id)}
+                              onCheckedChange={(checked) =>
+                                handleContactToggle(contact.id, checked as boolean)
+                              }
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={`contact-${contact.id}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {contact.name}
+                              </Label>
+                              <p className="text-xs text-gray-500">{contact.email}</p>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {contact.status === 1 ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRemoveContacts}
+                        disabled={selectedCount === 0 || processing}
+                      >
+                        Remove Selected
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAddContacts}
+                        disabled={selectedCount === 0 || processing}
+                      >
+                        Add Selected
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recipient Status Table */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Recipient Status</CardTitle>
+                <CardDescription>
+                  View the delivery status for each recipient
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {campaign.recipients && campaign.recipients.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Contact</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Sent At</TableHead>
+                        <TableHead>Error Message</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {campaign.recipients.map((recipient) => (
+                        <TableRow key={recipient.id}>
+                          <TableCell className="font-medium">
+                            {recipient.contact?.name || 'Unknown'}
+                          </TableCell>
+                          <TableCell>{recipient.contact?.email || 'Unknown'}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(recipient.status)}>
+                              {getStatusLabel(recipient.status)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {recipient.sent_at
+                              ? new Date(recipient.sent_at).toLocaleString()
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="text-red-600">
+                            {recipient.error_message || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No recipients found for this campaign.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
+      </AppLayout >
 
-        {/* Recipient Status Table */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Recipient Status</CardTitle>
-            <CardDescription>
-              View the delivery status for each recipient
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {campaign.recipients && campaign.recipients.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Sent At</TableHead>
-                    <TableHead>Error Message</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {campaign.recipients.map((recipient) => (
-                    <TableRow key={recipient.id}>
-                      <TableCell className="font-medium">
-                        {recipient.contact?.name || 'Unknown'}
-                      </TableCell>
-                      <TableCell>{recipient.contact?.email || 'Unknown'}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(recipient.status)}>
-                          {getStatusLabel(recipient.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {recipient.sent_at
-                          ? new Date(recipient.sent_at).toLocaleString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell className="text-red-600">
-                        {recipient.error_message || '-'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No recipients found for this campaign.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </>
   );
 }
