@@ -24,12 +24,12 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Campaigns',
-        href: 'campaigns',
+        href: '/campaigns',
         icon: Folder,
     },
     {
         title: 'Contacts',
-        href: 'contacts',
+        href: '/contacts',
         icon: Users,
     },
 ];

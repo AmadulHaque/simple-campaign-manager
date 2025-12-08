@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import AppLayout from '@/layouts/app-layout';
 import ContactFormModal from '@/components/ui/ContactFormModal';
 import type { Contact, PaginatedCursorData } from '@/types';
+import { getContactStatusLabel, getContactStatusColor } from '@/types/enums';
+
 
 interface Props {
   contacts: PaginatedCursorData<Contact>;
@@ -75,9 +77,30 @@ export default function Index({ contacts: initialData, filters }: Props) {
     );
   };
 
+  const loadDefault = () => {
+
+    setIsLoading(true);
+    router.get(
+      'contacts',
+      {
+        search: search,
+      },
+      {
+        preserveState: true,
+        preserveScroll: true,
+        only: ['contacts'],
+        onSuccess: (page: any) => {
+          setData(page.props.contacts);
+          setIsLoading(false);
+        },
+        onError: () => setIsLoading(false),
+      }
+    );
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.get('contacts', { search }, { preserveState: true, replace: true });
+    loadDefault()
   };
 
   const toggleSelect = (id: number) => {
@@ -95,13 +118,23 @@ export default function Index({ contacts: initialData, filters }: Props) {
   };
 
   const handleBulkDelete = () => {
-    if (!selectedIds.length || !confirm(`Delete ${selectedIds.length} contacts?`)) return;
+    if (selectedIds.length === 0) return;
 
-    router.post('/contacts/bulk-delete', { ids: selectedIds }, {
+    // Optional: use nicer confirmation dialog instead of confirm()
+    if (!confirm(`Delete ${selectedIds.length} contact(s)? This cannot be undone.`)) {
+      return;
+    }
+    router.post('/contacts/bulk-delete',
+      {
+        ids: selectedIds
+      }, {
+      preserveScroll: true,
       onSuccess: () => {
-        toast('Deleted successfully');
+        toast("Contacts deleted");
         setSelectedIds([]);
-        router.reload({ only: ['contacts'] });
+      },
+      onFinish: () => {
+        loadDefault();
       },
     });
   };
@@ -109,7 +142,10 @@ export default function Index({ contacts: initialData, filters }: Props) {
   const handleDelete = (id: number) => {
     if (!confirm('Delete this contact?')) return;
     router.delete('contacts/' + id, {
-      onSuccess: () => toast('Contact deleted'),
+      onSuccess: () => {
+        toast.success('Contact deleted');
+        loadDefault();
+      },
     });
   };
 
@@ -148,7 +184,8 @@ export default function Index({ contacts: initialData, filters }: Props) {
         toast(`Imported ${importData.length} contacts`);
         setShowImport(false);
         setImportData([]);
-        router.reload({ only: ['contacts'] });
+        loadDefault();
+        toast.success('Contacts imported');
       },
     });
   };
@@ -166,10 +203,19 @@ export default function Index({ contacts: initialData, filters }: Props) {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Contacts</h1>
           <div className="flex gap-3">
-            <Label htmlFor="import-file" className="cursor-pointer">
-              <input id="import-file" type="file" accept=".json" className="hidden" onChange={handleFileImport} />
-              <Button variant="outline" size="sm">
-                <Upload className="mr-2 h-4 w-4" /> Import JSON
+            <Label className="cursor-pointer">
+              <input
+                id="importFile"
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleFileImport}
+              />
+              <Button asChild variant="outline" size="sm">
+                <label htmlFor="importFile" className='cursor-pointer'>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import JSON
+                </label>
               </Button>
             </Label>
             <Button onClick={openCreate}>
@@ -208,7 +254,7 @@ export default function Index({ contacts: initialData, filters }: Props) {
                 </TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -233,7 +279,11 @@ export default function Index({ contacts: initialData, filters }: Props) {
                     </TableCell>
                     <TableCell className="font-medium">{contact.name}</TableCell>
                     <TableCell>{contact.email}</TableCell>
-                    <TableCell>{contact.phone || '-'}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContactStatusColor(contact.status)}`}>
+                        {getContactStatusLabel(contact.status)}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button size="sm" variant="ghost" onClick={() => openEdit(contact)}>
                         <Edit className="h-4 w-4" />
@@ -266,6 +316,7 @@ export default function Index({ contacts: initialData, filters }: Props) {
         open={showCreateEdit}
         onOpenChange={setShowCreateEdit}
         contact={editingContact}
+        loadDefault={loadDefault}
       />
 
       <Dialog open={showImport} onOpenChange={setShowImport}>
@@ -302,6 +353,6 @@ export default function Index({ contacts: initialData, filters }: Props) {
           </div>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </AppLayout >
   );
 }

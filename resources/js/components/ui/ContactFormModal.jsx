@@ -2,33 +2,67 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useForm } from '@inertiajs/react';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect } from 'react';
 import { Label } from './label';
+import { router } from '@inertiajs/react';
+import { toast } from 'sonner';
 
-
-
-export default function ContactFormModal({ open, onOpenChange, contact }) {
+export default function ContactFormModal({ open, onOpenChange, contact, loadDefault }) {
     const { data, setData, post, put, processing, errors, reset } = useForm({
         name: contact?.name || '',
         email: contact?.email || '',
-        phone: contact?.phone || '',
-        address: contact?.address || '',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const routeName = contact ? 'contacts.update' : 'contacts.store';
-        const method = contact ? put : post;
-
-        method(contact ? route('contacts.update', contact.id) : route('contacts.store'), {
-            data,
-            onSuccess: () => {
-                onOpenChange(false);
-                reset();
-            },
-        });
+        if (contact) {
+            // UPDATE
+            router.put(
+                'contacts/' + contact.id,  // ← Wayfinder: returns string
+                data,
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        onOpenChange(false);
+                        reset();
+                        loadDefault();
+                        toast.success('Contact updated');
+                    },
+                    onError: (errors) => {
+                        console.log(errors);
+                        toast.error('Something went wrong');
+                    }
+                }
+            );
+        } else {
+            // CREATE
+            router.post(
+                'contacts',
+                data,
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        onOpenChange(false);
+                        reset();
+                        loadDefault();
+                        toast.success('Contact created');
+                    },
+                    onError: (errors) => {
+                        console.log(errors);
+                        toast.error('Something went wrong');
+                    }
+                }
+            );
+        }
     };
+
+    useEffect(() => {
+        if (contact) {
+            setData('name', contact.name);
+            setData('email', contact.email);
+        }
+    }, [contact]);
 
     return (
         <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) reset(); }}>
@@ -58,13 +92,7 @@ export default function ContactFormModal({ open, onOpenChange, contact }) {
                         {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
                     </div>
 
-                    <div>
-                        <Label>Phone (optional)</Label>
-                        <Input
-                            value={data.phone}
-                            onChange={e => setData('phone', e.target.value)}
-                        />
-                    </div>
+
 
                     <div className="flex justify-end gap-3">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

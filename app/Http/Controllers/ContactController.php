@@ -6,7 +6,6 @@ use App\Http\Requests\ContactRequest;
 use App\Models\Contact;
 use App\Services\ContactService;
 use Exception;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,14 +18,13 @@ class ContactController extends Controller
         private ContactService $service
     ) {}
 
-    public function index(Request $request): Response
+    public function index(): Response
     {
-        $filters  = $request->only(['search', 'status']);
-        $contacts = $this->service->getPaginatedContacts(20, $filters);
+        $contacts = $this->service->getPaginatedContacts();
 
         return Inertia::render('Contacts/Index', [
             'contacts' => $contacts,
-            'filters'  => $filters,
+            'filters'  => request()->all('search', 'status'),
         ]);
     }
 
@@ -64,7 +62,7 @@ class ContactController extends Controller
             ->with('success', 'Contact deleted successfully.');
     }
 
-    public function import(Request $request): JsonResponse
+    public function import(Request $request): RedirectResponse
     {
         $request->validate([
             'contacts'         => 'required|array',
@@ -74,10 +72,10 @@ class ContactController extends Controller
 
         $imported = $this->service->importContacts($request->contacts);
 
-        return response()->json([
-            'message'  => "Successfully imported {$imported} contacts.",
-            'imported' => $imported,
-        ]);
+        return redirect()
+            ->route('contacts.index')
+            ->with('success', 'Successfully imported {$imported} contacts.');
+
     }
 
     public function bulkDelete(Request $request): RedirectResponse

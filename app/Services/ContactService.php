@@ -7,21 +7,19 @@ use Illuminate\Pagination\CursorPaginator;
 
 class ContactService
 {
-    public function getPaginatedContacts(
-        int $perPage = 20,
-        array $filters = []
-    ): CursorPaginator {
+    public function getPaginatedContacts(): CursorPaginator
+    {
+        $perPage = 20;
+        $search  = request('search', null);
+        $status  = request('status', null);
+
         return Contact::query()
-            ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
+            ->when($search, function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             })
-            ->when($filters['status'] ?? null, function ($query, $status) {
-                $query->where(function ($query) use ($status) {
-                    $query->where('status', $status);
-                });
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
             })
             ->orderBy('id', 'desc')->cursorPaginate($perPage);
     }
@@ -57,5 +55,10 @@ class ContactService
         }, $validContacts);
 
         return Contact::insert($data);
+    }
+
+    public function bulkDeleteContacts(array $ids): int
+    {
+        return Contact::whereIn('id', $ids)->delete();
     }
 }

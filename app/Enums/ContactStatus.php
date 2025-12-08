@@ -18,4 +18,14 @@ enum ContactStatus: int
             self::UNKNOWN       => 'Unknown',
         };
     }
+
+    public static function value(): array
+    {
+        return [
+            self::ACTIVE->value,
+            self::UNSUBSCRIBED->value,
+            self::BOUNCED->value,
+            self::UNKNOWN->value,
+        ];
+    }
 }

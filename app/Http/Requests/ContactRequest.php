@@ -24,8 +24,8 @@ class ContactRequest extends FormRequest
     {
         return [
             'name'   => 'required|string|max:255',
-            'email'  => 'required|email',
-            'status' => ['required', 'in:'.implode(',', ContactStatus::cases())],
+            'email'  => 'required|email|unique:contacts,email,'.$this->contact?->id ?? '',
+            'status' => ['nullable', 'in:'.implode(',', ContactStatus::value())],
         ];
     }
 }
