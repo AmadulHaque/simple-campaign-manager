@@ -22,7 +22,7 @@ class CampaignController extends Controller
             ->latest()
             ->paginate(10);
 
-        return Inertia::render('Campaigns/Index', [
+        return Inertia::render('campaigns/index', [
             'campaigns' => $campaigns,
         ]);
     }
@@ -31,7 +31,7 @@ class CampaignController extends Controller
     {
         $contacts = $this->service->getAvailableContacts(new Campaign);
 
-        return Inertia::render('Campaigns/Create', [
+        return Inertia::render('campaigns/create', [
             'contacts' => $contacts,
         ]);
     }
@@ -60,7 +60,7 @@ class CampaignController extends Controller
         $availableContacts = $this->service->getAvailableContacts($campaign);
         $stats             = $this->service->getCampaignStats($campaign);
 
-        return Inertia::render('Campaigns/Show', [
+        return Inertia::render('campaigns/show', [
             'campaign'          => $campaign,
             'availableContacts' => $availableContacts,
             'stats'             => $stats,

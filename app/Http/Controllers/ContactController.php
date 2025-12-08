@@ -22,7 +22,7 @@ class ContactController extends Controller
     {
         $contacts = $this->service->getPaginatedContacts();
 
-        return Inertia::render('Contacts/Index', [
+        return Inertia::render('contacts/Index', [
             'contacts' => $contacts,
             'filters'  => request()->all('search', 'status'),
         ]);
