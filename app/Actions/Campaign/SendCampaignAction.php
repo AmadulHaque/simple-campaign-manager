@@ -2,26 +2,34 @@
 
 namespace App\Actions\Campaign;
 
+use App\Enums\CampaignStatus;
 use App\Events\CampaignSendingStarted;
 use App\Jobs\SendCampaignEmail;
 use App\Models\Campaign;
+use App\Models\CampaignRecipient;
 
 class SendCampaignAction
 {
     public function execute(Campaign $campaign): void
     {
-        if ($campaign->status !== 'draft') {
+        if ($campaign->status !== CampaignStatus::DRAFT) {
             throw new \InvalidArgumentException('Campaign can only be sent from draft status');
         }
 
-        $campaign->update(['status' => 'sending']);
+        // Update campaign status to sending
+        $campaign->update(['status' => CampaignStatus::SENDING]);
 
         event(new CampaignSendingStarted($campaign));
 
-        foreach ($campaign->contacts as $contact) {
-            SendCampaignEmail::dispatch($campaign, $contact);
-        }
+        // Dispatch jobs for each recipient
+        $campaign->recipients()->chunk(100, function ($recipients) use ($campaign) {
+            foreach ($recipients as $recipient) {
+                SendCampaignEmail::dispatch($campaign, $recipient->contact);
+            }
+        });
 
-        $campaign->update(['sent_at' => now(), 'status' => 'sent']);
+        // Note: We don't immediately set status to 'sent' here
+        // The status will be updated when all emails are processed
+        // Or we can set it to 'sending' and let the jobs update individual recipient statuses
     }
 }

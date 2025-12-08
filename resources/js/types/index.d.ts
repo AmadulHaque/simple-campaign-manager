@@ -63,7 +63,7 @@ export interface Campaign {
     sent_count: number;
     failed_count: number;
     total_recipients: number;
-    status: 1 | 2 | 3 | 4 | 5;
+    status: string | null;
     scheduled_for: string | null;
     sent_at: string | null;
     user_id: number;

@@ -4,6 +4,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Data\CampaignData;
 use App\Http\Requests\CampaignRequest;
 use App\Models\Campaign;
 use App\Services\CampaignService;
@@ -18,7 +19,7 @@ class CampaignController extends Controller
 
     public function index(Request $request)
     {
-        $campaigns = Campaign::with('contacts')
+        $campaigns = Campaign::with(['recipients.contact'])
             ->latest()
             ->paginate(10);
 
@@ -29,7 +30,7 @@ class CampaignController extends Controller
 
     public function create()
     {
-        $contacts = $this->service->getAvailableContacts(new Campaign);
+        $contacts = $this->service->getAvailableContacts(new Campaign());
 
         return Inertia::render('campaigns/create', [
             'contacts' => $contacts,
@@ -38,16 +39,8 @@ class CampaignController extends Controller
 
     public function store(CampaignRequest $request)
     {
-        $campaign = $this->service->createCampaign([
-            'subject' => $request->subject,
-            'content' => $request->content,
-            'status'  => 'draft',
-            'user_id' => auth()->id(),
-        ]);
-
-        if ($request->has('contacts')) {
-            $this->service->attachContacts($campaign, $request->contacts);
-        }
+        $campaignData = CampaignData::fromRequest($request->validated());
+        $campaign = $this->service->createCampaign($campaignData);
 
         return redirect()
             ->route('campaigns.show', $campaign)
@@ -56,14 +49,14 @@ class CampaignController extends Controller
 
     public function show(Campaign $campaign)
     {
-        $campaign->load(['contacts', 'emailLogs']);
+        $campaign->load(['recipients.contact']);
         $availableContacts = $this->service->getAvailableContacts($campaign);
-        $stats             = $this->service->getCampaignStats($campaign);
+        $stats = $this->service->getCampaignStats($campaign);
 
         return Inertia::render('campaigns/show', [
-            'campaign'          => $campaign,
+            'campaign' => $campaign,
             'availableContacts' => $availableContacts,
-            'stats'             => $stats,
+            'stats' => $stats,
         ]);
     }
 
@@ -79,9 +72,9 @@ class CampaignController extends Controller
     public function updateContacts(Request $request, Campaign $campaign)
     {
         $request->validate([
-            'contacts'   => 'required|array',
+            'contacts' => 'required|array',
             'contacts.*' => 'exists:contacts,id',
-            'action'     => 'required|in:attach,detach',
+            'action' => 'required|in:attach,detach',
         ]);
 
         if ($request->action === 'attach') {
