@@ -28,8 +28,6 @@ class SendCampaignAction
             }
         });
 
-        // Note: We don't immediately set status to 'sent' here
-        // The status will be updated when all emails are processed
-        // Or we can set it to 'sending' and let the jobs update individual recipient statuses
+       
     }
 }
