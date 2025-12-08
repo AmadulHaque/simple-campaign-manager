@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use App\Models\Contact;
-use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\CursorPaginator;
 
 class ContactService
 {
     public function getPaginatedContacts(
         int $perPage = 20,
         array $filters = []
-    ): LengthAwarePaginator {
+    ): CursorPaginator {
         return Contact::query()
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
@@ -23,40 +23,39 @@ class ContactService
                     $query->where('status', $status);
                 });
             })
-            ->paginate($perPage);
+            ->orderBy('id', 'desc')->cursorPaginate($perPage);
     }
 
     public function createContact(array $data): Contact
     {
-        // return $this->repository->create($data);
+        return Contact::create($data);
     }
 
-    public function updateContact(Contact $contact, array $data): Contact
+    public function updateContact(Contact $contact, array $data): bool
     {
-        // return $this->repository->update($contact, $data);
+        return $contact->update($data);
     }
 
     public function deleteContact(Contact $contact): bool
     {
-        // return $this->repository->delete($contact);
+        return $contact->delete();
     }
 
     public function importContacts(array $contacts): int
     {
-        $imported = 0;
+        $validContacts = array_filter($contacts, function ($contact) {
+            return ! empty($contact['name']) && filter_var($contact['email'], FILTER_VALIDATE_EMAIL);
+        });
 
-        foreach ($contacts as $contactData) {
-            try {
-                // $this->repository->firstOrCreate(
-                //     ['email' => $contactData['email']],
-                //     $contactData
-                // );
-                $imported++;
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
+        $data = array_map(function ($contact) {
+            return [
+                'name'       => trim($contact['name']),
+                'email'      => strtolower(trim($contact['email'])),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }, $validContacts);
 
-        return $imported;
+        return Contact::insert($data);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ContactStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ContactRequest extends FormRequest
@@ -11,7 +12,7 @@ class ContactRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +23,9 @@ class ContactRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name'   => 'required|string|max:255',
+            'email'  => 'required|email',
+            'status' => ['required', 'in:'.implode(',', ContactStatus::cases())],
         ];
     }
 }

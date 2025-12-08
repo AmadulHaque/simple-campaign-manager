@@ -102,3 +102,12 @@ export interface PaginatedResponse<T> {
     per_page: number;
     total: number;
 }
+
+export interface PaginatedCursorData<T> {
+    data: T[];
+    next_cursor: string | null;
+    prev_cursor: string | null;
+    total?: number;
+    path: string;
+    per_page: number;
+}

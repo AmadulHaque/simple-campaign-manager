@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContactRequest;
 use App\Models\Contact;
 use App\Services\ContactService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,11 +32,18 @@ class ContactController extends Controller
 
     public function store(ContactRequest $request): RedirectResponse
     {
-        $contact = $this->service->createContact($request->validated());
+        try {
+            $contact = $this->service->createContact(data: $request->validated());
 
-        return redirect()
-            ->route('contacts.index')
-            ->with('success', 'Contact created successfully.');
+            return redirect()
+                ->route('contacts.index')
+                ->with('success', 'Contact created successfully.');
+
+        } catch (Exception $e) {
+            Log::error('Failed to create contact.', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Failed to create contact.');
+        }
     }
 
     public function update(ContactRequest $request, Contact $contact): RedirectResponse
@@ -69,5 +78,19 @@ class ContactController extends Controller
             'message'  => "Successfully imported {$imported} contacts.",
             'imported' => $imported,
         ]);
+    }
+
+    public function bulkDelete(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ids'   => 'required|array',
+            'ids.*' => 'exists:contacts,id',
+        ]);
+
+        $this->service->bulkDeleteContacts($request->ids);
+
+        return redirect()
+            ->route('contacts.index')
+            ->with('success', 'Selected contacts deleted successfully.');
     }
 }
